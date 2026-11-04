@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
+import authRouter from "./routes/auth.js";
 import healthRouter from "./routes/health.js";
 
 const allowedOrigins = new Set([
@@ -25,6 +26,7 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: "100kb" }));
 
+app.use("/api/auth", authRouter);
 app.use("/api/health", healthRouter);
 
 app.use((_req, res) => {
