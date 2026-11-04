@@ -1,0 +1,140 @@
+@baseUrl = http://localhost:4000
+@email = notes-demo@example.com
+@password = NotesDemo12345
+@expiredToken = REPLACE_WITH_VALID_EXPIRED_TOKEN
+@garbledToken = not.a.valid.jwt
+
+### Register a user
+# @name register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Notes Demo",
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Login (run this to capture the token used by subsequent requests)
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Current user
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{login.response.body.token}}
+
+### Missing-token failure
+GET {{baseUrl}}/api/notes
+
+### Expired-token failure
+# Generate a valid expired token with the local JWT_SECRET; see README.md.
+GET {{baseUrl}}/api/notes
+Authorization: Bearer {{expiredToken}}
+
+### Garbled-token failure
+GET {{baseUrl}}/api/notes
+Authorization: Bearer {{garbledToken}}
+
+### Notes list with filters and pagination
+GET {{baseUrl}}/api/notes?q=project&tag=work&pinned=true&page=1&limit=10
+Authorization: Bearer {{login.response.body.token}}
+
+### Create a note
+# @name createNote
+POST {{baseUrl}}/api/notes
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "title": "REST Client example",
+  "body": "Created through requests.http",
+  "tags": ["work", "demo"],
+  "pinned": false
+}
+
+### Get the created note
+GET {{baseUrl}}/api/notes/{{createNote.response.body.note.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### Validation failure: title is too long
+POST {{baseUrl}}/api/notes
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "title": "",
+  "tags": ["work"]
+}
+
+### Validation failure: malformed note ID
+GET {{baseUrl}}/api/notes/not-a-uuid
+Authorization: Bearer {{login.response.body.token}}
+
+### Update the created note
+PATCH {{baseUrl}}/api/notes/{{createNote.response.body.note.id}}
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "title": "Updated REST Client example",
+  "pinned": true
+}
+
+### Register another user (use a different email if this was run before)
+# @name registerOther
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Other Demo",
+  "email": "other-notes-demo@example.com",
+  "password": "OtherDemo12345"
+}
+
+### Login as the other user
+# @name loginOther
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "other-notes-demo@example.com",
+  "password": "OtherDemo12345"
+}
+
+### Create a note owned by the other user
+# @name createOtherNote
+POST {{baseUrl}}/api/notes
+Authorization: Bearer {{loginOther.response.body.token}}
+Content-Type: application/json
+
+{
+  "title": "Private other-user note",
+  "body": "Requests as the first user must not reveal or modify this note."
+}
+
+### Ownership failure: other user's note is indistinguishable from missing (404)
+GET {{baseUrl}}/api/notes/{{createOtherNote.response.body.note.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### Ownership failure: cannot update another user's note (404)
+PATCH {{baseUrl}}/api/notes/{{createOtherNote.response.body.note.id}}
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+  "title": "Attempted cross-user update"
+}
+
+### Ownership failure: cannot delete another user's note (404)
+DELETE {{baseUrl}}/api/notes/{{createOtherNote.response.body.note.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### Delete the created note
+DELETE {{baseUrl}}/api/notes/{{createNote.response.body.note.id}}
+Authorization: Bearer {{login.response.body.token}}
