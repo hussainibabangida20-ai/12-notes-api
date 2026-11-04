@@ -1,6 +1,6 @@
-export function validate(schema) {
+export function validate(schema, source = "body") {
   return (req, res, next) => {
-    const result = schema.safeParse(req.body);
+    const result = schema.safeParse(req[source]);
 
     if (!result.success) {
       const fieldErrors = {};
@@ -19,7 +19,12 @@ export function validate(schema) {
       });
     }
 
-    req.body = result.data;
+    if (source === "body") {
+      req.body = result.data;
+    } else {
+      req.validated ??= {};
+      req.validated[source] = result.data;
+    }
     return next();
   };
 }

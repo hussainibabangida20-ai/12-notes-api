@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 import authRouter from "./routes/auth.js";
 import healthRouter from "./routes/health.js";
+import notesRouter from "./routes/notes.js";
 
 const allowedOrigins = new Set([
   "http://localhost:5173",
@@ -28,6 +29,7 @@ app.use(express.json({ limit: "100kb" }));
 
 app.use("/api/auth", authRouter);
 app.use("/api/health", healthRouter);
+app.use("/api/notes", notesRouter);
 
 app.use((_req, res) => {
   res.status(404).json({
